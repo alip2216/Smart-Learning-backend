@@ -13,8 +13,8 @@ class GeminiService
     public function __construct()
     {
         $this->apiKey = env('GEMINI_API_KEY');
-        // Menggunakan model gemini-flash-latest yang terbukti sukses dan bebas kuota
-        $this->apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=' . $this->apiKey;
+        // Menggunakan model gemini-3.1-flash-lite
+        $this->apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=' . $this->apiKey;
     }
 
     /**
@@ -29,7 +29,7 @@ class GeminiService
         $prompt = $this->buildPrompt($logNote, $projectTitle);
 
         try {
-            $response = Http::post($this->apiUrl, [
+            $response = Http::timeout(60)->post($this->apiUrl, [
                 'contents' => [
                     [
                         'parts' => [
@@ -96,6 +96,7 @@ Format jawabanmu dengan rapi menggunakan Markdown (Gunakan heading, list, atau b
 
         // System prompt sebagai konteks pertama
         $systemPrompt = "Nama kamu adalah Anwar, seorang Asisten/Mentor Belajar Pribadi yang cerdas, ramah, dan solutif. "
+            . "Kamu adalah hasil ide brilian dan diciptakan oleh seorang mahasiswa bernama Alif. Jika pengguna bertanya tentang asal-usulmu, ceritakan dengan bangga tentang Alif. "
             . "Kamu sedang berbicara dengan muridmu bernama {$userName} yang sedang belajar tentang topik: \"{$projectTitle}\". "
             . "Tugasmu adalah menjawab pertanyaannya, berdiskusi, memberikan saran, dan memotivasi. "
             . "Gunakan bahasa Indonesia yang baik, asik, tidak kaku, dan format Markdown agar rapi. "
@@ -104,14 +105,15 @@ Format jawabanmu dengan rapi menggunakan Markdown (Gunakan heading, list, atau b
             . "INSTRUKSI KHUSUS 2 (PENGINGAT/ALARM): Jika pengguna memintamu untuk mengingatkan mereka belajar di waktu tertentu (contoh: 'ingatkan saya besok jam 8 pagi'), "
             . "kamu HARUS menghitung waktu yang tepat berdasarkan waktu saat ini, lalu sisipkan tag: ||SET_REMINDER::YYYY-MM-DD HH:MM::(Pesan pengingat singkat)|| di akhir balasanmu. "
             . "Contoh pengingat: Baik, alarm sudah saya setel! ||SET_REMINDER::2026-07-12 08:00::Waktunya belajar Laravel!||. "
-            . "Jika tidak ada perintah, jawab biasa saja tanpa tag apapun.";
-            
+            . "INSTRUKSI KHUSUS 3 (BATASAN TOPIK): JIKA pengguna bertanya atau membahas hal yang SAMA SEKALI TIDAK ADA HUBUNGANNYA dengan topik proyek \"{$projectTitle}\", kamu DILARANG KERAS menjawab substansinya! Tolak dengan sopan dan arahkan pengguna untuk menanyakannya di menu tab 'Anwar Explore' (halaman utama). "
+            . "Jika tidak ada perintah khusus, jawab biasa saja sesuai konteks topik tanpa tag apapun.";
+
         // Gemini API menerima array 'contents' berupa bergantian user dan model
         $contents[] = [
             'role' => 'user',
             'parts' => [['text' => $systemPrompt]]
         ];
-        
+
         $contents[] = [
             'role' => 'model',
             'parts' => [['text' => 'Mengerti! Saya siap menjadi mentor Anda.']]
@@ -133,7 +135,7 @@ Format jawabanmu dengan rapi menggunakan Markdown (Gunakan heading, list, atau b
         ];
 
         try {
-            $response = Http::post($this->apiUrl, [
+            $response = Http::timeout(60)->post($this->apiUrl, [
                 'contents' => $contents
             ]);
 
