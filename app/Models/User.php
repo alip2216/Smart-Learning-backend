@@ -48,7 +48,6 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    
     /**
      * Accessor for getting the full URL of the profile photo.
      */
@@ -59,12 +58,12 @@ class User extends Authenticatable
         if ($this->profile_photo_path) {
             return asset('storage/' . $this->profile_photo_path);
         }
-        
+
         // Default avatar if no photo is uploaded
         $name = trim(collect(explode(' ', $this->name))->map(function ($segment) {
             return mb_substr($segment, 0, 1);
         })->join(''));
-        
+
         return 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&color=7F9CF5&background=EBF4FF';
     }
 
